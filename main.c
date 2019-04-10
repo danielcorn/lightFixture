@@ -55,30 +55,32 @@ void LED_setColor(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
 void __interrupt() INTERRUPT_InterruptManager (void)
 {
     if(PIR3bits.RC1IF == 1){ 
-        LATC0 = 0;// a 1 means the eusart recieved 
-        LATC0 = 1;
-        LATC0 = 0;
+        
         if(RC1STAbits.FERR == 1){
-            LATC1 = 0;
-            LATC1 = 1;
-            LATC1 = 0;
+            
             //framing error occurred
             addressCount = 0;
             dmxFrame[addressCount] = RC1REG; // reading/placing start bit in address 0 
+            PIR3bits.RC1IF = 0;
         }else if(RC1STAbits.OERR == 1){
             //restart uart
             RC1REG; // read RC1 REG
+            
             RC1STAbits.CREN = 0;
             RC1STAbits.CREN = 1;
+            PIR3bits.RC1IF = 0;
             
         }else{
             addressCount++; // increasing address
             if(addressCount == 512){
                 // dmxFrame Complete
                 update_lightsPWM();
-                addressCount == 0;
+              
+                addressCount = 0;
+                PIR3bits.RC1IF = 0;
             }
             dmxFrame[addressCount] = RC1REG;
+            PIR3bits.RC1IF = 0;
             
         
         }
@@ -89,9 +91,14 @@ void __interrupt() INTERRUPT_InterruptManager (void)
 void main(void)
 {
     // initialize the device
-
+    addressCount = 0;
+    for(int i = 0; i < 512; i++){
+        dmxFrame[i] = 0;
+    }
+//    PIR3bits.RC1IF = 0;
     SYSTEM_Initialize();
     LEDinit();
+    
 
     // Enable the Global Interrupts
     INTERRUPT_GlobalInterruptEnable();
