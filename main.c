@@ -51,6 +51,7 @@ void update_lightsPWM(void); // function directed to update light value once
                              // full dmx frame received. 
 void LEDinit(void);
 void LED_setColor(uint8_t red, uint8_t green, uint8_t blue, uint8_t white);
+void clearDMX(void);
 
 void __interrupt() INTERRUPT_InterruptManager (void)
 {
@@ -65,7 +66,7 @@ void __interrupt() INTERRUPT_InterruptManager (void)
         }else if(RC1STAbits.OERR == 1){
             //restart uart
             RC1REG; // read RC1 REG
-            
+            clearDMX(); // clear DMX array
             RC1STAbits.CREN = 0;
             RC1STAbits.CREN = 1;
             PIR3bits.RC1IF = 0;
@@ -91,11 +92,8 @@ void __interrupt() INTERRUPT_InterruptManager (void)
 void main(void)
 {
     // initialize the device
-    addressCount = 0;
-    for(int i = 0; i < 512; i++){
-        dmxFrame[i] = 0;
-    }
-//    PIR3bits.RC1IF = 0;
+    
+    clearDMX();
     SYSTEM_Initialize();
     LEDinit();
     
@@ -163,6 +161,13 @@ void update_lightsPWM(void){
     // channel 2 of dmxFrame corresponds with the first slider on uDMX app
     // slider 1 is red; slider 2 is green, slider 3 is blue; slider 4 is white
     LED_setColor(dmxFrame[2], dmxFrame[3], dmxFrame[4], dmxFrame[5]);
+}
+
+void clearDMX(void){
+    addressCount = 0;
+    for(int i = 0; i < 512; i++){
+        dmxFrame[i] = 0;
+    }
 }
 /**
  End of File
